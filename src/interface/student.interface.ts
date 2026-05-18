@@ -3,7 +3,7 @@ export interface studentData {
 	NIS: string;
 	nama_lengkap: string;
 	jenis_kelamin: string;
-	tanggal_lahir: string;
+	tanggal_lahir: Date;
 	Alamat: string;
-	created_at: string;
+	created_at: Date;
 }

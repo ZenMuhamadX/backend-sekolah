@@ -1,5 +1,5 @@
 generator client {
-  provider = "prisma-client"
+  provider = "prisma-client-js"
   output   = "../src/generated/prisma"
 }
 
@@ -8,21 +8,21 @@ datasource db {
 }
 
 model dokumen_siswa {
-  id               BigInt        @id @default(autoincrement()) @db.UnsignedBigInt
-  siswa_id         BigInt        @db.UnsignedBigInt
-  jenis_dokumen_id BigInt        @db.UnsignedBigInt
+  id               Int           @id @default(autoincrement())
+  siswa_id         Int
+  jenis_dokumen_id Int
   file_path        String        @db.VarChar(255)
   uploaded_at      DateTime      @default(now()) @db.Timestamp(0)
   ket              String?       @db.Text
-  jenis_dokumen    jenis_dokumen @relation(fields: [jenis_dokumen_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "dokumen_siswa_jenis_dokumen_id_foreign")
-  siswa            siswa         @relation(fields: [siswa_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "dokumen_siswa_siswa_id_foreign")
+  jenis_dokumen    jenis_dokumen @relation(fields: [jenis_dokumen_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "dokumen_siswa_jenis_dokumen_id_foreign")
+  siswa            siswa         @relation(fields: [siswa_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "dokumen_siswa_siswa_id_foreign")
 
   @@index([jenis_dokumen_id], map: "dokumen_siswa_jenis_dokumen_id_foreign")
   @@index([siswa_id], map: "dokumen_siswa_siswa_id_foreign")
 }
 
 model guru {
-  id         BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  id         Int      @id @default(autoincrement())
   nama       String   @db.VarChar(255)
   nip        String   @db.VarChar(255)
   no_hp      String   @db.VarChar(255)
@@ -33,15 +33,15 @@ model guru {
 }
 
 model jenis_dokumen {
-  id            BigInt          @id @default(autoincrement()) @db.UnsignedBigInt
+  id            Int             @id @default(autoincrement())
   nama          String          @db.VarChar(255)
   dokumen_siswa dokumen_siswa[]
 }
 
 model kelas {
-  id            BigInt          @id @default(autoincrement()) @db.UnsignedBigInt
+  id            Int             @id @default(autoincrement())
   nama_kelas    String          @db.VarChar(255)
-  wali_kelas_id BigInt          @db.UnsignedBigInt
+  wali_kelas_id Int
   created_at    DateTime        @default(now()) @db.Timestamp(0)
   guru          guru            @relation(fields: [wali_kelas_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "kelas_wali_kelas_id_foreign")
   riwayat_kelas riwayat_kelas[]
@@ -50,7 +50,7 @@ model kelas {
 }
 
 model orang_tua {
-  id              BigInt            @id @default(autoincrement()) @db.UnsignedBigInt
+  id              Int               @id @default(autoincrement())
   nama            String            @db.VarChar(255)
   hubungan        String            @db.VarChar(255)
   no_hp           String            @db.VarChar(255)
@@ -59,14 +59,14 @@ model orang_tua {
 }
 
 model riwayat_kelas {
-  id              BigInt       @id @default(autoincrement()) @db.UnsignedBigInt
-  siswa_id        BigInt       @db.UnsignedBigInt
-  kelas_id        BigInt       @db.UnsignedBigInt
-  tahun_ajaran_id BigInt       @db.UnsignedBigInt
+  id              Int          @id @default(autoincrement())
+  siswa_id        Int
+  kelas_id        Int
+  tahun_ajaran_id Int
   tanggal_masuk   DateTime     @db.Date
   tanggal_keluar  DateTime?    @db.Date
   kelas           kelas        @relation(fields: [kelas_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "riwayat_kelas_kelas_id_foreign")
-  siswa           siswa        @relation(fields: [siswa_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "riwayat_kelas_siswa_id_foreign")
+  siswa           siswa        @relation(fields: [siswa_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "riwayat_kelas_siswa_id_foreign")
   tahun_ajaran    tahun_ajaran @relation(fields: [tahun_ajaran_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "riwayat_kelas_tahun_ajaran_id_foreign")
 
   @@index([kelas_id], map: "riwayat_kelas_kelas_id_foreign")
@@ -75,12 +75,12 @@ model riwayat_kelas {
 }
 
 model siswa {
-  id              BigInt            @id @default(autoincrement()) @db.UnsignedBigInt
+  id              Int               @id @default(autoincrement())
   NIS             String            @db.VarChar(255)
   nama_lengkap    String            @db.VarChar(255)
   jenis_kelamin   String            @db.VarChar(255)
   tanggal_lahir   DateTime          @db.Date
-  Alamat          String            @db.Text
+  alamat          String            @db.Text
   created_at      DateTime          @default(now()) @db.Timestamp(0)
   dokumen_siswa   dokumen_siswa[]
   riwayat_kelas   riwayat_kelas[]
@@ -88,29 +88,29 @@ model siswa {
 }
 
 model siswa_orang_tua {
-  id           BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
-  siswa_id     BigInt    @db.UnsignedBigInt
-  orang_tua_id BigInt    @db.UnsignedBigInt
-  orang_tua    orang_tua @relation(fields: [orang_tua_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "siswa_orang_tua_orang_tua_id_foreign")
-  siswa        siswa     @relation(fields: [siswa_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "siswa_orang_tua_siswa_id_foreign")
+  id           Int       @id @default(autoincrement())
+  siswa_id     Int
+  orang_tua_id Int
+  orang_tua    orang_tua @relation(fields: [orang_tua_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "siswa_orang_tua_orang_tua_id_foreign")
+  siswa        siswa     @relation(fields: [siswa_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "siswa_orang_tua_siswa_id_foreign")
 
   @@index([orang_tua_id], map: "siswa_orang_tua_orang_tua_id_foreign")
   @@index([siswa_id], map: "siswa_orang_tua_siswa_id_foreign")
 }
 
 model tahun_ajaran {
-  id            BigInt          @id @default(autoincrement()) @db.UnsignedBigInt
+  id            Int             @id @default(autoincrement())
   nama          String          @db.VarChar(255)
   aktif         Boolean
   riwayat_kelas riwayat_kelas[]
 }
 
 model users {
-  id            BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  id            Int      @id @default(autoincrement())
   username      String   @db.VarChar(255)
   password_hash String   @db.VarChar(255)
   role          String   @db.VarChar(255)
-  guru_id       BigInt   @db.UnsignedBigInt
+  guru_id       Int
   created_at    DateTime @default(now()) @db.Timestamp(0)
   guru          guru     @relation(fields: [guru_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "users_guru_id_foreign")
 
