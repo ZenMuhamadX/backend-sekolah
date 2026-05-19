@@ -26,8 +26,3 @@ export const getAllStudentsWithRelations = async () => {
     throw error
   }
 }
-
-// Contoh pemanggilan fungsi
-getAllStudentsWithRelations().then((data) => {
-  console.log('Data Siswa Lengkap:', JSON.stringify(data, null, 2))
-})

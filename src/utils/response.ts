@@ -1,11 +1,12 @@
 import { HttpStatusCode } from './../../node_modules/axios/index.d'
-export const succesResponse = (
+export const response = (
   status: HttpStatusCode,
+  succes: boolean,
   message: string,
   data: any,
   meta: any,
 ) => {
-  return { status, succes: true, message, data, meta }
+  return { status, succes, message, data, meta }
 }
 export const errorResponse = (
   status: HttpStatusCode,
