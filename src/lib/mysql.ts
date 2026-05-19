@@ -1,6 +1,6 @@
-import "dotenv/config";
-import { PrismaMariaDb } from "@prisma/adapter-mariadb";
-import { PrismaClient } from "../generated/prisma";
+import 'dotenv/config'
+import { PrismaMariaDb } from '@prisma/adapter-mariadb'
+import { PrismaClient } from '../generated/prisma'
 
 const adapter = new PrismaMariaDb({
   host: process.env.DATABASE_HOST,
@@ -9,6 +9,6 @@ const adapter = new PrismaMariaDb({
   database: process.env.DATABASE_NAME,
   port: Number(process.env.DATABASE_PORT),
   connectionLimit: 5,
-});
-const mysql = new PrismaClient({ adapter });
-export { mysql };
+})
+const mysql = new PrismaClient({ adapter })
+export { mysql }

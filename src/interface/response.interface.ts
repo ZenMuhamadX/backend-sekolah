@@ -1,15 +1,15 @@
-import { HttpStatusCode } from 'axios';
+import { HttpStatusCode } from 'axios'
 
 export interface SuccessResponse {
-	status: HttpStatusCode;
-	succes: boolean;
-	message: string;
-	data: any;
-	meta: any;
+  status: HttpStatusCode
+  succes: boolean
+  message: string
+  data: any
+  meta: any
 }
 export interface ErrorResponse {
-	status: HttpStatusCode;
-	succes: boolean;
-	message: string;
-	errors: any;
+  status: HttpStatusCode
+  succes: boolean
+  message: string
+  errors: any
 }

@@ -1,16 +1,16 @@
-import { HttpStatusCode } from "./../../node_modules/axios/index.d";
+import { HttpStatusCode } from './../../node_modules/axios/index.d'
 export const succesResponse = (
-   status: HttpStatusCode,
-   message: string,
-   data: any,
-   meta: any,
+  status: HttpStatusCode,
+  message: string,
+  data: any,
+  meta: any,
 ) => {
-   return { status, succes: true, message, data, meta };
-};
+  return { status, succes: true, message, data, meta }
+}
 export const errorResponse = (
-   status: HttpStatusCode,
-   message: string,
-   errors: any = null,
+  status: HttpStatusCode,
+  message: string,
+  errors: any = null,
 ) => {
-   return { status, succes: false, message, errors };
-};
+  return { status, succes: false, message, errors }
+}
