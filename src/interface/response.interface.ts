@@ -1,6 +1,6 @@
 import { HttpStatusCode } from 'axios'
 
-export interface SuccessResponse {
+export interface response {
   status: HttpStatusCode
   succes: boolean
   message: string
