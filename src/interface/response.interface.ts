@@ -1,7 +1,5 @@
-import { HttpStatusCode } from 'axios'
-
 export interface responseInterface {
-  status: HttpStatusCode
+  status: number
   success: boolean
   message: string
   total: number
@@ -9,7 +7,7 @@ export interface responseInterface {
   meta: any
 }
 export interface ErrorResponse {
-  status: HttpStatusCode
+  status: number
   success: boolean
   message: string
   errors: any

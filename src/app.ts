@@ -16,7 +16,13 @@ await configure({
 const app = new Hono()
 app.use(
   csrf({
-    origin: 'http://localhost:5173',
+    origin: (origin) => {
+      if (!origin) return true
+      return (
+        origin === 'http://localhost:5173' ||
+        origin.startsWith('http://localhost:')
+      )
+    },
   }),
 )
 app.use(

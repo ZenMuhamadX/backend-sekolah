@@ -1,7 +1,7 @@
-import { mysql } from '../lib/mysql'
+import { prisma } from '../lib/prisma'
 
 export const deleteStudent = async (id: number) => {
-  const existingSiswa = await mysql.siswa.findFirst({
+  const existingSiswa = await prisma.siswa.findFirst({
     where: {
       id,
       status: 'ACTIVE',
@@ -12,7 +12,7 @@ export const deleteStudent = async (id: number) => {
     return null
   }
 
-  const deletedSiswa = await mysql.siswa.update({
+  const deletedSiswa = await prisma.siswa.update({
     where: {
       id,
     },

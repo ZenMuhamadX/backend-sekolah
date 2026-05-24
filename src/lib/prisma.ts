@@ -10,5 +10,4 @@ const adapter = new PrismaMariaDb({
   port: Number(process.env.DATABASE_PORT),
   connectionLimit: 5,
 })
-const mysql = new PrismaClient({ adapter })
-export { mysql }
+export const prisma = new PrismaClient({ adapter })

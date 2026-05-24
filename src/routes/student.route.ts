@@ -2,27 +2,37 @@ import { Hono } from 'hono'
 import { getAllStudents } from '../services/getAllStudent'
 import { getStudentById } from '../services/getStudentById'
 import { createStudent } from '../services/createStudent'
+import { updateStudent } from '../services/updateStudent'
 import { deleteStudent } from '../services/deleteStudent'
 import { restoreStudent } from '../services/restoreStudents'
 import { response } from '../utils/response'
+import { validateBody } from '../utils/validate'
+import {
+  createStudentSchema,
+  updateStudentSchema,
+} from '../validators/student.validator'
+import { getStudentByName } from '../services/getStudentByName'
 
 // Membuat instance route khusus untuk semua endpoint yang berhubungan dengan data siswa
 const studentRoute = new Hono()
 
 // Metadata standar yang akan dikirim pada setiap response endpoint siswa
-// Tujuannya agar client/frontend tahu konteks API yang sedang diakses
 const metadata = {
   name: 'Student API',
   description: 'API untuk mengelola data siswa',
   version: '0.1.0',
 }
 
+// ─── Helper: validasi path param :id ─────────────────────────────────────────
+function parseId(raw: string): number | null {
+  const n = Number(raw)
+  return Number.isNaN(n) || n <= 0 ? null : n
+}
+
 /**
  * GET /
  *
  * Mengambil semua data siswa yang masih aktif.
- * Data siswa yang sudah dihapus secara soft delete tidak akan ditampilkan
- * karena filtering dilakukan di service getAllStudents().
  */
 studentRoute.get('/', async (c) => {
   try {
@@ -49,34 +59,84 @@ studentRoute.get('/', async (c) => {
   }
 })
 
-/**
- * GET /getById?id=1
- *
- * Mengambil detail satu siswa berdasarkan ID yang dikirim melalui query string.
- * Contoh request:
- * /students/getById?id=1
- *
- * Kenapa pakai query?
- * Karena struktur route kamu saat ini memang memakai pola getById/deleteById.
- * Nanti kalau mau lebih RESTful, bisa diubah ke /students/:id.
- */
-studentRoute.get('/getById', async (c) => {
-  try {
-    const id = Number(c.req.query('id'))
+// /**
+//  * GET /:name
+//  *
+//  * Mengambil detail satu siswa berdasarkan ID dari path parameter.
+//  */
+// studentRoute.get('/:name', async (c) => {
+//   try {
+//     const name = c.req.param('name')
 
-    // Validasi agar ID wajib berupa angka valid
-    // Number(undefined) menghasilkan NaN, jadi query id kosong juga akan tertangkap
-    if (Number.isNaN(id)) {
+//     if (!name) {
+//       return c.json(
+//         response(
+//           400,
+//           false,
+//           'ID siswa tidak valid, harus berupa angka positif',
+//           0,
+//           null,
+//           metadata,
+//         ),
+//         400,
+//       )
+//     }
+
+//     const student = await getStudentByName(name)
+
+//     if (!student) {
+//       return c.json(
+//         response(404, false, 'Siswa tidak ditemukan', 0, null, metadata),
+//         404,
+//       )
+//     }
+
+//     return c.json(
+//       response(
+//         200,
+//         true,
+//         'Detail siswa berhasil diambil',
+//         1,
+//         student,
+//         metadata,
+//       ),
+//       200,
+//     )
+//   } catch (error) {
+//     console.error(error)
+
+//     return c.json(
+//       response(500, false, 'Gagal mengambil detail siswa', 0, null, metadata),
+//       500,
+//     )
+//   }
+// })
+
+/**
+ * GET /:id
+ *
+ * Mengambil detail satu siswa berdasarkan ID dari path parameter.
+ */
+studentRoute.get('/:id', async (c) => {
+  try {
+    const id = parseId(c.req.param('id'))
+
+    if (!id) {
       return c.json(
-        response(400, false, 'ID siswa tidak valid', 0, null, metadata),
+        response(
+          400,
+          false,
+          'ID siswa tidak valid, harus berupa angka positif',
+          0,
+          null,
+          metadata,
+        ),
         400,
       )
     }
 
     const siswa = await getStudentById(id)
 
-    // Jika service mengembalikan null, berarti siswa tidak ditemukan
-    // atau siswa sudah berstatus deleted
     if (!siswa) {
       return c.json(
         response(404, false, 'Siswa tidak ditemukan', 0, null, metadata),
@@ -102,25 +162,19 @@ studentRoute.get('/getById', async (c) => {
  * POST /
  *
  * Membuat data siswa baru.
- * Body dikirim dalam bentuk JSON dari frontend/Postman.
- *
- * Service createStudent sebaiknya menangani:
- * - validasi data unik seperti NISN/NIK
- * - error siswa sudah aktif
- * - error siswa sudah pernah dihapus dan perlu direstore
+ * Validasi menggunakan Joi:
+ *   - `nama` WAJIB diisi
+ *   - Semua field lain opsional namun divalidasi tipe & formatnya
+ *   - Field tidak dikenal akan ditolak (allowUnknown: false)
+ *   - Semua error dikembalikan sekaligus (abortEarly: false)
  */
 studentRoute.post('/', async (c) => {
+  // Validasi Joi — jika gagal, helper mengirim 422 + daftar error
+  const body = await validateBody(c, createStudentSchema)
+  if (body === null) return c.res
+
   try {
-    const body = await c.req.json()
-
-    if (!body || typeof body !== 'object' || Array.isArray(body)) {
-      return c.json(
-        response(400, false, 'Payload siswa tidak valid', 0, null, metadata),
-        400,
-      )
-    }
-
-    const siswa = await createStudent(body)
+    const siswa = await createStudent(body as any)
 
     return c.json(
       response(201, true, 'Siswa berhasil dibuat', 1, siswa, metadata),
@@ -129,63 +183,120 @@ studentRoute.post('/', async (c) => {
   } catch (error) {
     console.error(error)
 
-    // Menangkap error custom dari service.
-    // Misalnya:
-    // - 409 SISWA_ALREADY_EXISTS
-    // - 409 SISWA_ALREADY_DELETED
-    //
-    // Kalau tidak ada statusCode, default-nya tetap 500.
     const err = error as Error & {
       statusCode?: number
       code?: string
       siswaId?: number
     }
 
-    const data = {
-      code: err.code ?? 'CREATE_STUDENT_FAILED',
-      siswaId: err.siswaId ?? null,
-    }
+    const statusCode = err.statusCode ?? 500
 
     return c.json(
       response(
-        err.statusCode ?? 500,
+        statusCode,
         false,
         err.message || 'Gagal membuat siswa',
         0,
-        data,
+        {
+          code: err.code ?? 'CREATE_STUDENT_FAILED',
+          siswaId: err.siswaId ?? null,
+        },
         metadata,
       ),
+      statusCode as any,
     )
   }
 })
 
 /**
- * DELETE /deleteById?id=1
+ * PUT /:id
  *
- * Menghapus siswa berdasarkan ID melalui query string.
- * Penghapusan yang disarankan adalah soft delete, bukan hard delete.
- *
- * Artinya data tidak benar-benar hilang dari database,
- * tetapi hanya diubah menjadi:
- * - status: DELETED
- * - deletedAt: tanggal saat dihapus
+ * Memperbarui data siswa berdasarkan ID.
+ * Validasi menggunakan Joi:
+ *   - Minimal 1 field harus dikirim
+ *   - Semua field opsional namun divalidasi tipe & formatnya
  */
-studentRoute.delete('/deleteById', async (c) => {
-  try {
-    const id = Number(c.req.query('id'))
+studentRoute.put('/:id', async (c) => {
+  const id = parseId(c.req.param('id'))
 
-    // Validasi ID agar tidak menerima nilai kosong, teks, atau NaN
-    if (Number.isNaN(id)) {
+  if (!id) {
+    return c.json(
+      response(
+        400,
+        false,
+        'ID siswa tidak valid, harus berupa angka positif',
+        0,
+        null,
+        metadata,
+      ),
+      400,
+    )
+  }
+
+  // Validasi Joi — jika gagal, helper mengirim 422 + daftar error
+  const body = await validateBody(c, updateStudentSchema)
+  if (body === null) return c.res
+
+  try {
+    const siswa = await updateStudent(id, body as any)
+
+    return c.json(
+      response(200, true, 'Siswa berhasil diperbarui', 1, siswa, metadata),
+      200,
+    )
+  } catch (error) {
+    console.error(error)
+
+    const err = error as Error & {
+      statusCode?: number
+      code?: string
+      siswaId?: number
+    }
+
+    const statusCode = err.statusCode ?? 500
+
+    return c.json(
+      response(
+        statusCode,
+        false,
+        err.message || 'Gagal memperbarui siswa',
+        0,
+        {
+          code: err.code ?? 'UPDATE_STUDENT_FAILED',
+          siswaId: err.siswaId ?? null,
+        },
+        metadata,
+      ),
+      statusCode as any,
+    )
+  }
+})
+
+/**
+ * DELETE /:id
+ *
+ * Menghapus siswa berdasarkan ID (Soft Delete).
+ */
+studentRoute.delete('/:id', async (c) => {
+  try {
+    const id = parseId(c.req.param('id'))
+
+    if (!id) {
       return c.json(
-        response(400, false, 'ID siswa tidak valid', 0, null, metadata),
+        response(
+          400,
+          false,
+          'ID siswa tidak valid, harus berupa angka positif',
+          0,
+          null,
+          metadata,
+        ),
         400,
       )
     }
 
     const siswa = await deleteStudent(id)
 
-    // Jika siswa null, kemungkinan ID tidak ada
-    // atau siswa tersebut sudah dihapus sebelumnya
     if (!siswa) {
       return c.json(
         response(404, false, 'Siswa tidak ditemukan', 0, null, metadata),
@@ -208,32 +319,32 @@ studentRoute.delete('/deleteById', async (c) => {
 })
 
 /**
- * PATCH /restoreById?id=1
+ * PATCH /:id/restore
  *
  * Mengembalikan siswa yang sebelumnya sudah dihapus secara soft delete.
- *
- * Restore akan mengubah data menjadi:
- * - status: ACTIVE
- * - deletedAt: null
- *
- * Endpoint ini hanya berhasil jika siswa memang ada dan statusnya DELETED.
  */
-studentRoute.patch('/restoreById', async (c) => {
+studentRoute.patch('/:id/restore', async (c) => {
   try {
-    const id = Number(c.req.query('id'))
+    const id = parseId(c.req.param('id'))
 
-    // Validasi ID dari query string
-    if (Number.isNaN(id)) {
+    console.log(id)
+
+    if (!id) {
       return c.json(
-        response(400, false, 'ID siswa tidak valid', 0, null, metadata),
+        response(
+          400,
+          false,
+          'ID siswa tidak valid, harus berupa angka positif',
+          0,
+          null,
+          metadata,
+        ),
         400,
       )
     }
 
     const siswa = await restoreStudent(id)
 
-    // Jika null, berarti siswa tidak ditemukan
-    // atau siswa tersebut tidak dalam kondisi deleted
     if (!siswa) {
       return c.json(
         response(

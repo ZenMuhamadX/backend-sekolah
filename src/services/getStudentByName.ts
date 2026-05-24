@@ -1,10 +1,12 @@
 import { prisma } from '../lib/prisma'
 import { Student } from '../interface/student.interface'
 
-export const getStudentById = async (id: number): Promise<Student | null> => {
+export const getStudentByName = async (
+  name: string,
+): Promise<Student | null> => {
   const siswa = await prisma.siswa.findFirst({
     where: {
-      id,
+      nama: name,
       status: 'ACTIVE',
     },
   })
