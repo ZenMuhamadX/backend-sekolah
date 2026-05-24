@@ -1,17 +1,23 @@
+import {
+  ErrorResponse,
+  responseInterface,
+} from '../interface/response.interface'
 import { HttpStatusCode } from './../../node_modules/axios/index.d'
 export const response = (
   status: HttpStatusCode,
-  succes: boolean,
+  success: boolean,
   message: string,
+  totalData: number = 0,
   data: any,
   meta: any,
-) => {
-  return { status, succes, message, data, meta }
+): responseInterface => {
+  return { status, success, message, total: totalData, data, meta }
 }
 export const errorResponse = (
   status: HttpStatusCode,
   message: string,
+  success: boolean = false,
   errors: any = null,
-) => {
-  return { status, succes: false, message, errors }
+): ErrorResponse => {
+  return { status, success, message, errors }
 }

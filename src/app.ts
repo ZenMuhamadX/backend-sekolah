@@ -7,7 +7,6 @@ import { requestId } from 'hono/request-id'
 import { cors } from 'hono/cors'
 import { configure, getConsoleSink } from '@logtape/logtape'
 import { honoLogger } from '@logtape/hono'
-import { useApitally } from 'apitally/hono'
 
 await configure({
   sinks: { console: getConsoleSink() },
@@ -15,7 +14,11 @@ await configure({
 })
 
 const app = new Hono()
-app.use(csrf())
+app.use(
+  csrf({
+    origin: 'http://localhost:5173',
+  }),
+)
 app.use(
   honoLogger({
     format: 'combined',
@@ -26,23 +29,12 @@ app.use(requestId())
 app.use(
   cors({
     origin: '*',
+    allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
   }),
 )
-useApitally(app, {
-  clientId: 'ec68841b-a9e8-4e3c-a740-3c6627487de3',
-  env: 'dev', // or "prod"
-
-  // Optionally enable and configure request logging
-  requestLogging: {
-    enabled: true,
-    logRequestHeaders: true,
-    logRequestBody: true,
-    logResponseBody: true,
-    captureLogs: true,
-  },
-})
 
 app.route('/', commonRoute)
+// app.post('/', (c) => c.text('Hello World!'))
 
 app.route('/students', studentRoute)
 
